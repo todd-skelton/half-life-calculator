@@ -35,17 +35,24 @@ function calculateQuantity(previousQuantity: number, additionalDose: number, hal
   return previousQuantity * halfLifeFactor + additionalDose;
 }
 
-function calculateAdditionalDose(doseInterval: number, initialDose: number, doseIncrease: number, maxDose: number, time: number): number {
-  const dose = initialDose + doseIncrease * Math.floor(time / doseInterval);
-  return time % doseInterval === 0 ? Math.min(dose, maxDose) : 0;
+function calculateAdditionalDose(doseInterval: number, initialDose: number, doseIncrease: number, doseIncreaseInterval: number, maxDose: number, time: number): number {
+  if (time === 0) {
+    return initialDose;
+  }
+  if (time % doseInterval === 0) {
+    const doseIncreaseCount = Math.floor(time / doseIncreaseInterval);
+    const dose = initialDose + doseIncrease * doseIncreaseCount;
+    return Math.min(dose, maxDose);
+  }
+  return 0;
 }
 
-function generateDataPoints(halfLife: number, initialDose: number, doseInterval: number, doseIncrease: number, maxDose: number, timeSpan: number): DataPoint[] {
+function generateDataPoints(halfLife: number, initialDose: number, doseInterval: number, doseIncrease: number, doseIncreaseInterval: number, maxDose: number, timeSpan: number): DataPoint[] {
   const halfLifeFactor = calculateHalfLifeFactor(halfLife);
   const data: DataPoint[] = [];
   let quantity = 0;
   for (let time = 0; time <= timeSpan; time++) {
-    const additionalDose = calculateAdditionalDose(doseInterval, initialDose, doseIncrease, maxDose, time);
+    const additionalDose = calculateAdditionalDose(doseInterval, initialDose, doseIncrease, doseIncreaseInterval, maxDose, time);
     quantity = calculateQuantity(quantity, additionalDose, halfLifeFactor);
     data.push({ time, quantity });
   }
@@ -87,10 +94,11 @@ function App() {
   const [halfLife, setHalfLife] = React.useState(5);
   const [initialDose, setInitialDose] = React.useState(2.5);
   const [doseInterval, setDoseInterval] = React.useState(7);
+  const [doseIncreaseInterval, setDoseIncreaseInterval] = React.useState(28);
   const [doseIncrease, setDoseIncrease] = React.useState(2.5);
   const [maxDose, setMaxDose] = React.useState(15);
-  const [timeSpan, setTimeSpan] = React.useState(100);
-  const dataPoints = generateDataPoints(halfLife, initialDose, doseInterval, doseIncrease, maxDose, timeSpan);
+  const [timeSpan, setTimeSpan] = React.useState(168);
+  const dataPoints = generateDataPoints(halfLife, initialDose, doseInterval, doseIncrease, doseIncreaseInterval, maxDose, timeSpan);
 
   const data = {
     labels: dataPoints.map((dataPoint) => dataPoint.time),
@@ -111,6 +119,7 @@ function App() {
         <TextField id="initial-dose" label="Initial Dose" variant="outlined" value={initialDose} onChange={(e) => setInitialDose(+e.target.value)} />
         <TextField id="dose-interval" label="Dose Interval" variant="outlined" value={doseInterval} onChange={(e) => setDoseInterval(+e.target.value)} />
         <TextField id="dose-increase" label="Dose Increase" variant="outlined" value={doseIncrease} onChange={(e) => setDoseIncrease(+e.target.value)} />
+        <TextField id="dose-increase-interval" label="Dose Increase Interval" variant="outlined" value={doseIncreaseInterval} onChange={(e) => setDoseIncreaseInterval(+e.target.value)} />
         <TextField id="max-dose" label="Max Dose" variant="outlined" value={maxDose} onChange={(e) => setMaxDose(+e.target.value)} />
         <TextField id="time-span" label="Time Span" variant="outlined" value={timeSpan} onChange={(e) => setTimeSpan(+e.target.value)} />
         <Line options={options} data={data} />
